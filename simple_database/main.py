@@ -25,7 +25,6 @@ class Table(object):
         self.columns = columns or self._read_columns()    
         
         if not os.path.isfile(self.table_filepath):
-            # create the file using open(file, 'w'), write the default JSON above
             with open(self.table_filepath, 'w') as file_object:
                 json.dump({'columns': columns, 'rows': []}, file_object)
 
@@ -68,20 +67,32 @@ class Table(object):
     def query(self, **kwargs):
         # Read from the table's JSON file all the rows in the current table
         # and return only the ones that match with provided arguments.
-        # We would recomment to  use the `yield` statement, so the resulting
+        # We would recommend to  use the `yield` statement, so the resulting
         # iterable object is a generator.
 
         # IMPORTANT: Each of the rows returned in each loop of the generator
         # must be an instance of the `Row` class, which contains all columns
         # as attributes of the object.
-        pass
+        for row in self.all():
+            row_is_good = True
+            for key, value in kwargs.items():
+                if getattr(row, key) != value:
+                    row_is_good = False
+            if row_is_good:
+                yield row
+            # check if row is a match with **kwargs
+            # if it is, yield it
+            # kwargs = {'author': "John", 'nationality': "USA"}
 
     def all(self):
         # Similar to the `query` method, but simply returning all rows in
         # the table.
         # Again, each element must be an instance of the `Row` class, with
         # the proper dynamic attributes.
-        pass
+        with open(self.table_filepath, 'r') as file_object:
+            table_data = json.load(file_object)
+        for row in table_data['rows']:
+            yield Row(row)
 
     def count(self):
         # Read the JSON file and return the counter of rows in the table
