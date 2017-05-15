@@ -27,13 +27,24 @@ class Table(object):
         if not os.path.isfile(self.table_filepath):
             with open(self.table_filepath, 'w') as file_object:
                 json.dump({'columns': columns, 'rows': []}, file_object)
-
+                
+    
+    def open_json(self):
+        with open(self.table_filepath, 'r') as file_object:
+            return json.load(file_object)
+            
+    
+    def write_json(self, table_data):
+        with open(self.table_filepath, 'w') as file_object:
+            json.dump(table_data, file_object)
+            
+            
     def _read_columns(self):
         # Read the columns configuration from the table's JSON file
         # and return it.
-        with open(self.table_filepath, 'r') as file_object:
-            json_dict = json.load(file_object)
-            return json_dict['columns']
+        json_data = self.open_json()
+        return json_data['columns']
+      
 
     def insert(self, *args):
         # Validate that the provided row data is correct according to the
@@ -54,15 +65,12 @@ class Table(object):
                     the_row_dict[column['name']] = arg.isoformat()
                 else:
                     the_row_dict[column['name']] = arg
-                    
-        with open(self.table_filepath, 'r') as file_object:
-            table_data = json.load(file_object)
+
+        table_data = self.open_json()
         
         table_data['rows'].append(the_row_dict)
         
-        with open(self.table_filepath, 'w') as file_object:
-            json.dump(table_data, file_object)
-
+        self.write_json(table_data)
 
     def query(self, **kwargs):
         # Read from the table's JSON file all the rows in the current table
@@ -89,15 +97,14 @@ class Table(object):
         # the table.
         # Again, each element must be an instance of the `Row` class, with
         # the proper dynamic attributes.
-        with open(self.table_filepath, 'r') as file_object:
-            table_data = json.load(file_object)
+        
+        table_data = self.open_json()
         for row in table_data['rows']:
             yield Row(row)
 
     def count(self):
         # Read the JSON file and return the counter of rows in the table
-        with open(self.table_filepath, 'r') as file_object:
-            table_data = json.load(file_object)
+        table_data = self.open_json()
         return len(table_data['rows'])
 
     def describe(self):
